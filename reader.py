@@ -14,7 +14,7 @@ class Reader():
 
         self.buffer = array('u')# deque(maxlen=bufferSize)
         self.lastBuffer = []
-        self.buffer.extend(self.file.readline(self.bufferSize))
+        self.buffer.extend(self.file.read(self.bufferSize))
 
     def putBack(self, c):
        self.buffer.insert(0, c) #insertleft
@@ -31,7 +31,9 @@ class Reader():
             except Exception:
                 raise EOFError()
             self.buffer.extend(str)
-        try:
-             return (self.buffer.pop(0)) #popleft
-        except IndexError as e:
-            raise EOFError()
+            if(len(self.buffer)  != 0):
+                return self.buffer.pop(0) #popleft
+            else:
+                return None
+        else:
+            return self.buffer.pop(0)

@@ -1,7 +1,7 @@
-#!/usr/bin/python3
+#!/usr/bin/python
 import argparse
 from parser import Parser, ParserError
-from token import Token
+from lexeme import Lexeme
 from reader import Reader
 from lexer import Lexer
 if __name__ == '__main__':
@@ -14,16 +14,12 @@ if __name__ == '__main__':
         print(e)
         exit()
     lexer = Lexer(reader)
-    c  = lexer.getToken()
-    while(c != Token('', 'EOF')):
-        print(c)
-        c = lexer.getToken()
- #   parser = Parser(lexer)
- #   try:
- #       (t, tree) = parser.expression()
- #   except ParserError as e:
- #       print(e)
- #       exit()
- #   print(t)
- #   print(tree)
+    parser = Parser(lexer)
+    try:
+        (t, tree) = parser.block()
+    except ParserError as e:
+        print(e)
+        exit()
+    print(t)
+    print(tree)
 

@@ -1,6 +1,6 @@
-from token import Token
+from lexeme import Lexeme
 class Tree():
-    def __init__(self, lex = Token('', '')):
+    def __init__(self, lex = Lexeme('', '')):
         self.mark = lex
         self.type = lex.type
         self.branches = []

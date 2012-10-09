@@ -1,1 +1,4 @@
-def trunc(ll, mr)
+def trunc(int ll, int mr)
+{
+  ll = ll+mr;
+}

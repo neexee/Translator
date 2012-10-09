@@ -13,7 +13,7 @@ class TestParse(unittest.TestCase):
         reader = Reader('test.txt')
         lexer = Lexer(reader)
         parser = Parser(lexer)
-        t = parser.expression()
+        t = parser.func()
         reader.close()
         self.assertEqual(t, 16.0)
     def testbraces(self):

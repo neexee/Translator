@@ -1,5 +1,5 @@
 import string
-from token import Token
+from lexeme import Lexeme
 class LexerError(Exception):
     def __init__(self, value):
         self.value = 'Lexer error on symbol '+ value
@@ -22,28 +22,28 @@ class Lexer:
             except EOFError as e:
                 #print(e)
                 self.reader.close()
-                return Token('', 'EOF')
+                return Lexeme('', 'EOF')
             if(c =='\n'):
-                return Token('', 'newline')
+                return Lexeme('', 'newline')
             if(c == None):
                 self.reader.close()
-                return Token('', 'EOF')
+                return Lexeme('', 'EOF')
 
         buffer = ''
 
         if(c in self.punct):
-           return Token(c, 'punctuation')
+           return Lexeme(c, 'punctuation')
         if(c in self.operations):
-           return Token(c, 'operator')
+           return Lexeme(c, 'operator')
         if(c == '\n'):
-           return Token(c, "EOL")
+           return Lexeme(c, "EOL")
 
         if(c in string.digits):
             while (c in string.digits):
                   buffer+=c
                   c= self.reader.nextChar()
             self.reader.putBack(c)
-            return Token(buffer, 'int')
+            return Lexeme(buffer, 'int')
 
         while(c in string.ascii_lowercase):
             buffer+=c
@@ -52,10 +52,11 @@ class Lexer:
 
         if(buffer  == 'def'):
             self.parse_func = True
-            return Token(buffer, 'def')
+            return Lexeme(buffer, 'def')
         else:
             if(self.parse_func):
-                return Token(buffer, 'func')
+                self.parse_func = False
+                return Lexeme(buffer, 'func')
             else:
-                return Token(buffer, 'id')
+                return Lexeme(buffer, 'id')
 

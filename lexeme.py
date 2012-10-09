@@ -1,4 +1,4 @@
-class Token():
+class Lexeme():
     def __init__(self, value, type):
        self.value = value
        self.type = type
@@ -12,3 +12,7 @@ class Token():
         return self.value == other.value and self.type == other.type
     def __ne__(self, other):
         return not (self.value == other.value and self.type == other.type )
+    def __key(self):
+        return (self.value, self.type)
+    def __hash__(self):
+        return hash(self.__key())

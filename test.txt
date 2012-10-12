@@ -1,4 +1,5 @@
-def trunc(int ll, int mr)
+int i =0;
+def f(int a, int b)
 {
-  ll = ll+mr;
+   a = a+b;
 }

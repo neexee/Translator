@@ -16,10 +16,11 @@ if __name__ == '__main__':
     lexer = Lexer(reader)
     parser = Parser(lexer)
     try:
-        (t, tree) = parser.block()
+        t = parser.program()
+        print(t)
     except ParserError as e:
         print(e)
         exit()
-    print(t)
-    print(tree)
+   # print(t)
+   #  print(tree)
 

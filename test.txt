@@ -1,5 +1,13 @@
 int i =0;
-def f(int a, int b)
+def int f(int a, int b)
 {
-   a = a+b;
+}
+def int  g()
+{
+}
+def int  main()
+{
+    int c =0;
+    int d = 1;
+    c = f(c, d);
 }

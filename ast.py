@@ -5,8 +5,9 @@ class AST():
         self.type = lex.type
         self.branches = []
     def add_branch(self, branch):
-        if(len(self.branches) ==0):
+        if(len(self.branches) ==0  and branch.type != 'func'):
             self.type = branch.type
+
         if(len(self.branches) == 1):
             #self.mark+= branch.mark
             if(branch.type == 'double'  or self.type =='double'):
@@ -18,7 +19,7 @@ class AST():
         if(self.branches == []):
             return "<"+self.type+">"+self.mark+"</"+ self.type+">\n"
         else:
-            str="<"+self.mark+">\n"
+            str="<" + self.type + ' name=\''+self.mark+"\'>\n"
             for i in self.branches:
                 str+= i.__repr__()
                 #str.join(self.branches)

@@ -1,6 +1,7 @@
 import string
 from  math import pow
 from ast import AST
+from function import Function
 import tree
 from lexeme import  Lexeme
 from environment import Environment
@@ -22,10 +23,11 @@ class Parser:
         self.lineNum =1
         self.environment = Environment(None)
         self.eof = Lexeme('', 'EOF')
+        self.functions = []
     def get_env_value(self, symbol):
         env = self.environment
         while(env != None):
-            if(len(env.dict) != 0):
+            if(symbol.value in env.dict):
                 s = env.dict[symbol.value]
                 if(s == None):
                     continue
@@ -36,7 +38,7 @@ class Parser:
     def get_type_in_env(self, symbol):
         env = self.environment
         while(env != None):
-            if(len(env.dict) != 0):
+            if(symbol.value in env.dict):
                 s = env.dict[symbol.value]
                 if(s != None):
                     return s[0]
@@ -47,7 +49,7 @@ class Parser:
         env = self.environment
 
         while(env != None):
-            if(len(env.dict) != 0):
+            if(symbol.value in env.dict):
                 if(symbol in env):
                     return True
             env = env.top
@@ -81,14 +83,17 @@ class Parser:
                 self.declaration()
                 self.next(';')
                 self.ignorenewline()
+                continue
             if(self.symbol.value == 'def'):
                 self.next()
                 t.add_branch(self.func())
                 self.ignorenewline()
+                continue
             if(self.symbol.value == '{'):
                 self.next()
                 self.block()
                 self.next('}')
+                continue
             if(self.symbol.value =='}' or self.symbol == self.eof):
                 return t
             #if(self.symbol.type == 'newline'):
@@ -103,14 +108,20 @@ class Parser:
                 symbol = self.symbol
                 symbol.type = type
                 if(symbol.type == 'func'):
-                     t = AST(symbol)
-                     t.add_branch(self.factor())
+                     #t = AST(symbol)
+                     t = self.factor()
+                     self.next(';')
                      return t
                 t = AST(Lexeme('=', 'operator'))
                 self.next()
                 self.next('=')
                 expr = self.expression()
-                if(symbol.type == expr.type):
+                etype = expr.type
+                #Check type expression and symbol.
+                if(expr.type == 'func'):
+                    function = self.get_env_value(Lexeme(expr.mark, expr.type))
+                    etype = function.returnType
+                if(symbol.type == etype):
                     t.add_branch(AST(symbol))
                     t.add_branch(expr)
                     self.next(';')
@@ -141,8 +152,12 @@ class Parser:
                     if(self.symbol == Lexeme('=', 'operator')):
                         self.next()
                         expr = self.expression()
+                        etype = expr.type
                         #Check type expression and symbol.
-                        if(expr.type == symbol.type):
+                        if(expr.type == 'func'):
+                            function = self.get_env_value(Lexeme(expr.value, expr.type))
+                            etype = function.returnType
+                        if(etype == symbol.type):
                              self.environment.dict[symbol.value] = (symbol.type, expr)
                         else:
                             self.error()
@@ -156,24 +171,30 @@ class Parser:
         pass
 
     def func(self):
+        if(self.symbol.value in self.lexer.types):
+            returnType = self.symbol.value
+        else:
+            self.error('unknown return type')
+        self.next()
         if( self.exists_in_env(self.symbol)):
             self.error(self.symbol + 'already declared' )    #function already declared
         else:
             func = self.symbol
+            func.type = 'func'
             #self.enviroment.dict[self.symbol] = ''
             self.next()
             self.next('(')
             params = self.func_params()
             self.next(')')
-            self.environment.dict[func.value] = (func.type, params)
+            self.environment.dict[func.value] = (func.type, Function(returnType, params))
             for param in params:
                 self.environment.dict[param.value] = (param.type, None)
             self.ignorenewline()
             self.next('{')
             body = self.block()
             # temp
-            body.type = 'int'
-            body.mark = 'function'
+            body.type = 'func'
+            body.mark = func.value
             self.ignorenewline()
             self.next('}')
             return body
@@ -293,7 +314,9 @@ class Parser:
             t = lbranch
         return  t
     def function_call(self):
-        params = self.get_env_value(self.symbol)
+        function = self.get_env_value(self.symbol)
+        params = function.params
+        t = AST(self.symbol)
         self.next()
         self.next('(')
         for paramnum in range(0, len(params)):
@@ -303,13 +326,18 @@ class Parser:
             if(self.exists_in_env(self.symbol)):
                 type_passed = self.get_type_in_env(self.symbol)
                 if(type == type_passed):
+                    self.symbol.type = type_passed
+                    t.add_branch(AST(self.symbol))
                     self.next()
                     if(self.symbol == Lexeme(',', 'punctuation')):
+                        self.next()
                         continue
                 else:
                     self.error('parameter type mismatch, defined ' + type + ', passed '+ type_passed)
             else:
                 self.error('undefined')
+        self.next(')')
+        return t
     def factor(self):
         """ factor = (expression) | number
         """
@@ -326,32 +354,41 @@ class Parser:
         else:
             symbol = self.symbol
             c = self.symbol.value
-            self.next()
+
             if(symbol.type in self.lexer.types):
                 try:
                     t = AST(symbol)
+                    self.next()
                 except ValueError as e:
                     raise ParserError(self.symbol, self.lineNum, self.symbolNum)
+                return t
             if(symbol.type == 'id'):
                if(self.exists_in_env(symbol)):
-                   # Att! If funcname == id name, it will bad
                    type = self.get_type_in_env(symbol)
-                   if(type == 'func'):
-                       t = self.function_call()
-                   else:
-                       symbol.type = type
-                       t = AST(symbol)
+                   symbol.type = type
                else:
-                   self.error('undefined')
+                   self.error('unknown symbol')
+                   # Att! If funcname == id name, it will bad
+            else:
+                self.error('unknown symbol type')
+            if(symbol.type == 'func'):
+                    t = self.function_call()
+            else:
+                    symbol.type = type
+                    t = AST(symbol)
+                    self.next()
+
+                    #self.error('unknown function')
+
         return  t
     def next(self, *args, **kwargs):
         if(len(args) !=0):
             if(args[0] != self.symbol.value):
-                raise ParserError(self.symbol, self.lineNum, self.symbolNum , '')
+                raise ParserError(self.symbol, self.lexer.linenum, self.lexer.symbolnum , '')
         try:
             self.symbol = self.lexer.getToken()
         except EOFError as e:
-            raise ParserError(self.symbol, self.lineNum, self.symbolNum)
+            raise ParserError(self.symbol, self.lexer.linenum, self.lexer.symbolnum)
     def error(self, message = None):
-        raise ParserError(self.symbol, self.lineNum, self.symbolNum, message)
+        raise ParserError(self.symbol, self.lexer.linenum, self.lexer.symbolnum, message)
 

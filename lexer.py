@@ -13,17 +13,22 @@ class Lexer:
         self.operations = ['*', '/', '-', '+', '^', '=']
         self.punct = ['(', ')', '{', '}', ';', ',']
         self.parse_func = False
+        self.symbolnum = 1
+        self.linenum = 1
     def getToken(self):
         c = ' '
 
         while c  in string.whitespace:
             try:
                 c = self.reader.nextChar()
+                self.symbolnum +=1
             except EOFError as e:
                 #print(e)
                 self.reader.close()
                 return Lexeme('', 'EOF')
             if(c =='\n'):
+                self.symbolnum = 1
+                self.linenum +=1
                 return Lexeme('', 'newline')
             if(c == None):
                 self.reader.close()

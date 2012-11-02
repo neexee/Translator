@@ -1,7 +1,7 @@
 #!/usr/bin/python
 import argparse
 from parser import Parser, ParserError
-from lexeme import Lexeme
+from generator import Generator
 from reader import Reader
 from lexer import Lexer
 if __name__ == '__main__':
@@ -17,10 +17,10 @@ if __name__ == '__main__':
     parser = Parser(lexer)
     try:
         t = parser.program()
-        print(t)
+        #print(t)
+        g = Generator(t)
+        code = g.generateCode()
+        print(code)
     except ParserError as e:
         print(e)
         exit()
-   # print(t)
-   #  print(tree)
-

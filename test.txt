@@ -1,9 +1,7 @@
-int i =0;
 def int f(int a, int b)
 {
-}
-def int  g()
-{
+   int i = a +b +2;
+   return i+3;
 }
 def int  main()
 {

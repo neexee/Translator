@@ -9,7 +9,6 @@ class Lexer:
     def __init__(self, reader):
         self.reader = reader
         self.types = ['int', 'double']
-        self.keywords = ['return', 'def']
         self.operations = ['*', '/', '-', '+', '^', '=']
         self.punct = ['(', ')', '{', '}', ';', ',']
         self.parse_func = False

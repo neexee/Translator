@@ -9,7 +9,7 @@ class Lexer:
     def __init__(self, reader):
         self.reader = reader
         self.types = ['int', 'double']
-        self.operations = ['*', '/', '-', '+', '^', '=']
+        self.operations = ['*', '/', '-', '+', '^', '=', '<', '>']
         self.punct = ['(', ')', '{', '}', ';', ',']
         self.parse_func = False
         self.symbolnum = 1
@@ -22,7 +22,6 @@ class Lexer:
                 c = self.reader.nextChar()
                 self.symbolnum +=1
             except EOFError as e:
-                #print(e)
                 self.reader.close()
                 return Lexeme('', 'EOF')
             if(c =='\n'):
@@ -37,8 +36,15 @@ class Lexer:
 
         if(c in self.punct):
            return Lexeme(c, 'punctuation')
+
         if(c in self.operations):
-           return Lexeme(c, 'operator')
+            cnext = self.reader.nextChar()
+            if(cnext == '='):
+                c += cnext
+            else:
+                self.reader.putBack(cnext)
+            return Lexeme(c, 'operator')
+
         if(c == '\n'):
            return Lexeme(c, "EOL")
 

@@ -9,10 +9,11 @@ class FunctionCall(Node):
         for x in  self.params:
             str += '<param>\n' + x.__repr__() + '</param>\n'
         return str + '</funcall>\n'
-    def generateCode(self):
-        code = 'LOAD_GLOBAL ' + self.name + '\n'
+    def generateCode(self, startMark):
+        code = str(startMark) + ': LOAD_GLOBAL ' + self.name + '\n'
         for p in self.params:
-            c = p.generateCode()
+            (c, startMark) = p.generateCode(startMark+1)
             code+=c
-        code+='CALL_FUNCTION ' + str(len(self.params)) + '\n'
-        return code
+        code+=str(startMark)+': CALL_FUNCTION ' + str(len(self.params)) + '\n'
+
+        return (code, startMark + 1)

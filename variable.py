@@ -5,8 +5,8 @@ class Variable(Node):
         """ if local == true. variable in local scope """
         super().__init__(name, type)
         self.scope = local
-    def generateCode(self):
+    def generateCode(self, startMark):
         if self.scope:
-            return 'LOAD_FAST ' + self.name + '\n'
+            return (str(startMark)+ ': LOAD_FAST ' + self.name + '\n', startMark+1)
         else:
-            return 'LOAD_GLOBAL ' + self.name +'\n'
+            return (str(startMark) +': LOAD_GLOBAL ' + self.name +'\n', startMark+1)

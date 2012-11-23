@@ -6,6 +6,7 @@ from node import Node
 from op import Operator
 from _return import Return
 from lexeme import  Lexeme
+from ifelse import IfElse
 from environment import Environment
 from variable import Variable
 
@@ -109,12 +110,38 @@ class Parser:
                 continue
             if self.symbol.value =='}' or self.symbol == self.eof:
                 break
+            if(self.symbol.value == 'if'):
+                instructions = True
+                t.add_branch(self.ifstatement())
             else:
                 instructions = True
                 t.add_branch(self.instruction())
 
         return t
-    def instruction(self):
+    def ifstatement(self):
+        t = IfElse(self.environment)
+        self.next()
+        self.next('(')
+        t.add_branch(self.instruction(False))
+        self.next(')')
+        self.ignorenewline()
+        self.next('{')
+        t.add_branch(self.block())
+        self.next('}')
+        self.ignorenewline()
+        if self.symbol.value =='else':
+            self.ignorenewline()
+            self.next()
+            self.ignorenewline()
+            self.next('{')
+            t.add_branch(self.block())
+            self.ignorenewline()
+            self.next('}')
+            self.ignorenewline()
+        else:
+            t.add_branch(Node('', ''))
+        return t
+    def instruction(self, nl = True):
         #funcall or assignment
         if self.symbol.value == 'return':
             if(self.environment.top == None):
@@ -140,9 +167,11 @@ class Parser:
                         t = self.factor()
                         self.next(';')
                         return t
-                    t = Operator('=')
+                    #t = Operator('=')
                     self.next()
-                    self.next('=')
+                    if self.symbol.value in self.lexer.operations:
+                        t = Operator(self.symbol.value)
+                        self.next()
                     expr = self.expression()
                     etype = expr.type
                     #Check type expression and symbol.
@@ -152,8 +181,9 @@ class Parser:
                     if symbol.type == etype:
                         t.add_branch(Variable(symbol.value, symbol.type, local))
                         t.add_branch(expr)
-                        self.next(';')
-                        self.next()
+                        if(nl):
+                            self.next(';')
+                            self.next()
                         return t
                     else:
                         self.error('unexpected assignment ' + expr.type + ' to ' + symbol.type)
@@ -178,7 +208,7 @@ class Parser:
                         self.next()
                         #variables.append(symbol)
                         continue
-                    if self.symbol == Lexeme('=', 'operator'):
+                    if self.symbol.value == '=':
                         self.next()
                         expr = self.expression()
                         etype = expr.type

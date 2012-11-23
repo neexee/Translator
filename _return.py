@@ -8,9 +8,10 @@ class Return(Node):
             str += b.__repr__()
         str = '<return>' +self.name + '\'>\n' + str +'</return>\n'
         return str
-    def generateCode(self):
+    def generateCode(self, startMark):
         code = ''
         for f in self.branches:
-            code+=f.generateCode()
-        code = code + 'RETURN_VALUE\n'
-        return code
+            (c, startMark)=f.generateCode(startMark)
+            code+=c
+        code = code + str(startMark) +': RETURN_VALUE\n'
+        return (code, startMark +1)

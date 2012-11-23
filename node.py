@@ -24,5 +24,5 @@ class Node():
                 #str.join(self.branches)
             str+="</"+ self.type+ ">\n"
             return str
-    def generateCode(self):
-        pass
+    def generateCode(self, startMark):
+        return ('', startMark)

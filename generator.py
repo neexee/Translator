@@ -9,7 +9,7 @@ class Generator():
         self.startBlock = tree
     def generateCode(self):
         main = self.findMain()
-        code = self.startBlock.generateCode()
+        (code, len) = self.startBlock.generateCode(0)
         return code
     def findMain(self):
         if 'main' in  self.startBlock.env.dict:

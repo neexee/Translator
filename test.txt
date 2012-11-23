@@ -1,11 +1,14 @@
-def int f(int a, int b)
-{
-   int i = a +b +2;
-   return i+3;
-}
 def int  main()
 {
     int c =0;
     int d = 1;
-    c = f(c, d);
+    if(c> 0)
+    {
+        c= c+1;
+    }
+    else
+    {
+        c= d+1;
+    }
+    return c+d;
 }

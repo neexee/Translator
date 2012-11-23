@@ -8,7 +8,7 @@ class Function(Node):
     def __repr__(self):
         p = ', '.join([x.__repr__() for x in self.params])
         return super.__repr__() + ' params: [' + p + '], return type: '  + self.returnType + ', code: '+ self.code.__repr()
-    def generateCode(self):
+    def generateCode(self, startMark):
         c = '#Disassembly function ' + self.name + '\n'
-        c += self.code.generateCode()
-        return c
+        (code, startMark) = self.code.generateCode(0)
+        return (c+ code, startMark)

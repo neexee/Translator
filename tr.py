@@ -1,9 +1,9 @@
 #!/usr/bin/python3
 import argparse
-from parser import Parser, ParserError
-from generator import Generator
-from reader import Reader
-from lexer import Lexer
+from compiler.logic.parser import Parser, ParserError
+from compiler.logic.generator import Generator
+from compiler.logic.reader import Reader
+from compiler.logic.lexer import Lexer
 if __name__ == '__main__':
     aparser = argparse.ArgumentParser(description='Compiler')
     aparser.add_argument('file')

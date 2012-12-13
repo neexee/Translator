@@ -1,14 +1,11 @@
-def int  main()
+def int main()
 {
-    int c =0;
-    int d = 1;
-    if(c> 0)
-    {
-        c= c+1;
-    }
-    else
-    {
-        c= d+1;
-    }
-    return c+d;
+  int t = 10;
+  int s = 0;
+  while (t >0)
+  {
+     s = print(t);
+     t = t-1;
+  }
+  return s;
 }

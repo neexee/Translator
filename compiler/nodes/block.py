@@ -1,4 +1,4 @@
-from node import Node
+from compiler.nodes.node import Node
 class Block(Node):
     def __init__(self, env):
         super().__init__('block', 'block')
@@ -9,3 +9,5 @@ class Block(Node):
             (c,  startMark)=b.generateCode(startMark)
             code += c
         return (code, startMark)
+    def toasm(self):
+        pass

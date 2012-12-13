@@ -1,15 +1,16 @@
-from block import Block
-from const import Constant
-from function import Function
-from functioncall import FunctionCall
-from node import Node
-from op import Operator
-from _return import Return
-from lexeme import  Lexeme
-from ifelse import IfElse
-from environment import Environment
-from variable import Variable
-
+from compiler.nodes._while import While
+from compiler.nodes.block import Block
+from compiler.nodes.const import Constant
+from compiler.nodes.function import Function
+from compiler.nodes.functioncall import FunctionCall
+from compiler.nodes.node import Node
+from compiler.nodes.op import Operator
+from compiler.nodes._return import Return
+from compiler.logic.lexeme import  Lexeme
+from compiler.nodes.ifelse import IfElse
+from compiler.logic.environment import Environment
+from compiler.nodes.variable import Variable
+from compiler.nodes.function import builtin
 class ParserError(Exception):
     def __init__(self, symbol, lineNum, symbolNum, message):
         self.value = '['+repr(lineNum)+':'+repr(symbolNum)+']'+\
@@ -28,6 +29,7 @@ class Parser:
         self.eof = Lexeme('', 'EOF')
         self.functions = []
         self.currentFunction = None
+        self.varnum = 0
     def get_env_value(self, symbol):
         env = self.environment
         while env != None:
@@ -113,10 +115,24 @@ class Parser:
             if(self.symbol.value == 'if'):
                 instructions = True
                 t.add_branch(self.ifstatement())
+            if(self.symbol.value == 'while'):
+                instructions = True
+                t.add_branch(self.whilestatiment())
             else:
                 instructions = True
                 t.add_branch(self.instruction())
 
+        return t
+    def whilestatiment(self):
+        t = While(self.environment)
+        self.next()
+        self.next('(')
+        t.add_branch(self.instruction(False))
+        self.next(')')
+        self.ignorenewline()
+        self.next('{')
+        t.add_branch(self.block())
+        self.next('}')
         return t
     def ifstatement(self):
         t = IfElse(self.environment)
@@ -134,7 +150,14 @@ class Parser:
             self.next()
             self.ignorenewline()
             self.next('{')
+
+            savedvar = self.varnum
+            self.varnum = 0
+
             t.add_branch(self.block())
+
+            self.varnum = savedvar
+
             self.ignorenewline()
             self.next('}')
             self.ignorenewline()
@@ -158,8 +181,13 @@ class Parser:
                 self.error('incompatible types when returning type "' + etype +'" but "' + type + '" was expected')
             return  t
         else:
-                (local, ex) = self.exists_in_env(self.symbol)
+                if self.symbol.value in [x.name for x in builtin]:
+                    ex = True
+                    local = True
+                else:
+                    (local, ex) = self.exists_in_env(self.symbol)
                 if ex:
+
                     type = self.get_type_in_env(self.symbol)
                     symbol = self.symbol
                     symbol.type = type
@@ -174,9 +202,16 @@ class Parser:
                         self.next()
                     expr = self.expression()
                     etype = expr.type
+
                     #Check type expression and symbol.
                     if expr.type == 'funcall':
-                        function = self.get_env_value(Lexeme(expr.name, expr.type))
+                        if expr.name in  [ x.name for x in builtin]:
+                            for x in builtin:
+                                if x.name == expr.name:
+                                    function = x
+                                    break
+                        else:
+                            function = self.get_env_value(Lexeme(expr.name, expr.type))
                         etype = function.returnType
                     if symbol.type == etype:
                         t.add_branch(Variable(symbol.value, symbol.type, local))
@@ -214,7 +249,10 @@ class Parser:
                         etype = expr.type
                         #Check type expression and symbol.
                         t = Operator('=')
+
                         t.add_branch(Variable(symbol.value, symbol.type, True))
+                        self.varnum+=1
+
                         if expr.type == 'funcall':
                             function = self.get_env_value(Lexeme(expr.value, expr.type))
                             etype = function.returnType
@@ -300,7 +338,7 @@ class Parser:
         """ term ::= [atom/*factor]
         """
         lbranch = self.atom()
-        t = Node('','')
+        t = Operator('')
         t.add_branch(lbranch)
         # flag == True ==> We don't wrap tree as term. Keep it atom.
         flag = True
@@ -328,7 +366,7 @@ class Parser:
     def expression(self):
         """ expression ::= [term+-term]
         """
-        t = Node('', '')
+        t = Operator( '')
         sign = 1
         # I have no good idea for unary [+/-]
         if self.symbol.value == '+' :
@@ -368,7 +406,7 @@ class Parser:
     def atom(self):
         """atom ::= factor^factor
         """
-        t = Node('','')
+        t = Operator('')
         lbranch = self.factor()
         t.add_branch(lbranch)
         flag = True
@@ -388,7 +426,13 @@ class Parser:
             t = lbranch
         return  t
     def function_call(self):
-        function = self.get_env_value(self.symbol)
+        if self.symbol.value in [x.name for x in builtin]:
+           for x in builtin:
+               if x.name == self.symbol.value:
+                   function = x
+                   break
+        else:
+            function = self.get_env_value(self.symbol)
         params = function.params
         self.next()
         self.next('(')
@@ -416,7 +460,7 @@ class Parser:
     def factor(self):
         """ factor = (expression) | number
         """
-        t = Node('','')
+        t = Operator('')
         if self.symbol.value == '(':
             self.next('(')
             branch = self.expression()
@@ -434,11 +478,15 @@ class Parser:
                 return t
             if symbol.type == 'id':
                (local, exist) = self.exists_in_env(symbol)
-               if exist:
-                   type = self.get_type_in_env(symbol)
-                   symbol.type = type
+               if symbol.value in [x.name for x in builtin]:
+                   type = 'function'
+                   symbol.type = 'function'
                else:
-                   self.error('unknown symbol')
+                    if exist:
+                        type = self.get_type_in_env(symbol)
+                        symbol.type = type
+                    else:
+                        self.error('unknown symbol')
                    # Att! If funcname == id name, it will bad
             else:
                 self.error('unknown symbol type')

@@ -1,4 +1,4 @@
-from node import Node
+from compiler.nodes.node import Node
 class Return(Node):
     def __init__(self):
         super().__init__('return', 'return')
@@ -15,3 +15,5 @@ class Return(Node):
             code+=c
         code = code + str(startMark) +': RETURN_VALUE\n'
         return (code, startMark +1)
+    def toasm(self):
+        pass

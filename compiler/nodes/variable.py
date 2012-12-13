@@ -1,4 +1,4 @@
-from node import Node
+from compiler.nodes.node import Node
 
 class Variable(Node):
     def __init__(self, name, type, local):

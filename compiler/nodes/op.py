@@ -1,4 +1,4 @@
-from node import Node
+from compiler.nodes.node import Node
 class Operator(Node):
     def __init__(self, name):
         super().__init__(name, 'operator')
@@ -29,10 +29,10 @@ class Operator(Node):
                        '-' : lambda : 'BINARY_SUB\n',
                        '/' : lambda : 'BINARY_DIV\n',
                        '*' : lambda : 'BINARY_MUL\n',
-                       '==': lambda : 'COMPARE_EQ\n',
+                       '==': lambda : 'COMPARE_OP =\n',
                        '+=': lambda : 'UNARY_ADD\n',
-                       '<' : lambda : 'COMPARE_LEFT\n',
-                       '>' : lambda : 'COMPARE_RIGHT\n'
+                       '<' : lambda : 'COMPARE_OP <\n',
+                       '>' : lambda : 'COMPARE_OP >\n'
                    }[self.name]()
         funcName = strm + ': '+ funcName
         code = left  + right + funcName

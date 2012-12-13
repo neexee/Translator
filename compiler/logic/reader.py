@@ -1,4 +1,3 @@
-from collections import deque
 import io
 from array import array
 class Reader():

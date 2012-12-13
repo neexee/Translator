@@ -1,4 +1,4 @@
-from node import  Node
+from compiler.nodes.node import  Node
 class IfElse(Node):
     def __init__(self, env):
         super().__init__('if', 'if')
@@ -11,9 +11,9 @@ class IfElse(Node):
         falseSection = self.branches[2]
         (code, startMark) = condition.generateCode(startMark)
         conditionMark = startMark
-        (truecode, startMark) = trueSection.generateCode(startMark+1)
+        (truecode, startMark) = trueSection.generateCode(startMark)
         endOfTrue= startMark
-        (falsecode, startMark) = falseSection.generateCode(startMark+1)
+        (falsecode, startMark) = falseSection.generateCode(startMark)
         endOfFalse = startMark
         if endOfFalse == endOfTrue:
             code +=  str(conditionMark)+ ': JUMP_IF_FALSE ' + str(endOfTrue) + '\n' + truecode

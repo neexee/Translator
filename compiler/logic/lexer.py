@@ -1,5 +1,5 @@
 import string
-from lexeme import Lexeme
+from compiler.logic.lexeme import Lexeme
 class LexerError(Exception):
     def __init__(self, value):
         self.value = 'Lexer error on symbol '+ value

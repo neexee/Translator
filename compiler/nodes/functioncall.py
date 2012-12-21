@@ -24,7 +24,7 @@ class FunctionCall(Node):
                     f = x
                     break
             for p in self.params:
-                (c, startMark) = p.generateCode(startMark+1)
+                (c, startMark) = p.generateCode(startMark)
                 code+=c
             code+=str(startMark)+': ' + f.code+ ' ' + str(len(self.params)) + '\n'
         return (code, startMark + 1)

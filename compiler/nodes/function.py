@@ -11,7 +11,13 @@ class Function(Node):
         p = ', '.join([x.__repr__() for x in self.params])
         return super.__repr__() + ' params: [' + p + '], return type: '  + self.returnType + ', code: '+ self.code.__repr()
     def generateCode(self, startMark):
-        (code, startMark) = self.code.generateCode(0)
+        code = ''
+        startMark = 0
+        for p in reversed(self.params):
+            code += str(startMark) + ': STORE_FAST ' +p.name + '\n'
+            startMark+=1
+        (codec, startMark) = self.code.generateCode(startMark)
+        code+=codec
         c = 'function ' + self.name +' '+str(startMark - 1)+ '\n'
         return (c+ code, startMark)
     def toasm(self):

@@ -1,3 +1,4 @@
+from symtable import Symbol
 from compiler.nodes._while import While
 from compiler.nodes.block import Block
 from compiler.nodes.const import Constant
@@ -83,7 +84,7 @@ class Parser:
 
     def block(self):
         t = Block(self.environment)
-        instructions = False
+        #instructions = False
         while True:
             self.ignorenewline()
             if self.symbol.value in self.lexer.types:
@@ -92,11 +93,11 @@ class Parser:
                     t.add_branch(i)
                 self.next(';')
                 self.ignorenewline()
-                instructions = True
+        #        instructions = True
                 continue
             if self.symbol.value == 'def':
-                if instructions:
-                    break
+         #       if instructions:
+         #           break
                 self.next()
                 t = self.func()
                 self.ignorenewline()
@@ -113,13 +114,13 @@ class Parser:
             if self.symbol.value =='}' or self.symbol == self.eof:
                 break
             if(self.symbol.value == 'if'):
-                instructions = True
-                t.add_branch(self.ifstatement())
+         #       instructions = True
+               t.add_branch(self.ifstatement())
             if(self.symbol.value == 'while'):
-                instructions = True
+         #       instructions = True
                 t.add_branch(self.whilestatiment())
             else:
-                instructions = True
+          #      instructions = True
                 t.add_branch(self.instruction())
 
         return t
@@ -254,7 +255,7 @@ class Parser:
                         self.varnum+=1
 
                         if expr.type == 'funcall':
-                            function = self.get_env_value(Lexeme(expr.value, expr.type))
+                            function = self.get_env_value(Lexeme(expr.name, expr.type))
                             etype = function.returnType
                         if etype == symbol.type:
                              self.environment.dict[symbol.value] = expr
@@ -287,13 +288,11 @@ class Parser:
             self.next('(')
             params = self.func_params()
             self.next(')')
-
             self.ignorenewline()
             self.next('{')
             self.environment = Environment(self.environment)
             for param in params:
                 self.environment.dict[param.name] = param
-
             f = Function(name=func.value, code=None,returnType=returnType, params=params)
 
             self.environment.top.dict[func.value] = f
@@ -440,21 +439,22 @@ class Parser:
         for paramnum in range(0, len(params)):
             param = params[paramnum]
             type = param.type
-            (local, ex) = self.exists_in_env(self.symbol)
-            if(ex):
-                type_passed = self.get_type_in_env(self.symbol)
-                if type == type_passed:
-                    self.symbol.type = type_passed
-                    p.append(Variable(self.symbol.value, self.symbol.type,local ))
+            expr = self.expression()
+            type_passed = expr.type
+            if(expr.type == 'funcall'):
+                type_passed = self.get_env_value(Lexeme(expr.name,'')).returnType
+            if type == type_passed:
+                self.symbol.type = type_passed
+                p.append(expr)
+                self.next()
+                if self.symbol == Lexeme(',', 'punctuation'):
                     self.next()
-                    if self.symbol == Lexeme(',', 'punctuation'):
-                        self.next()
-                        continue
-                else:
-                    self.error('parameter type mismatch, defined ' + type + ', passed '+ type_passed)
+                    continue
             else:
-                self.error('undefined')
-        self.next(')')
+                    self.error('parameter type mismatch, defined ' + type + ', passed '+ type_passed)
+            #else:
+            #    self.error('undefined')
+        #self.next(')')
         t = FunctionCall(function.name, p)
         return t
     def factor(self):

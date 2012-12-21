@@ -18,16 +18,18 @@ private:
     // just int 
     void init();
     int compare(int a, int b, std::string op);
+    void add_func(std::string name, std::vector<std::function<int()>>* code);
+    std::vector<std::function<int()>>* get_code(std::string funcname);
+    
     environment* env;
     
     //std::map<std::string, int> variables;
     std::stack<int> stack;
     std::string current_func;
     int instruction_number;
-    std::list<std::function<void()>> current_code;
-    std::function<void()> ll;
-    std::list<std::function<void()>>::iterator current_instruction;
-    std::list<std::function<void()>> running_code;
+    std::vector<std::function<int()>>* current_code;
+    std::function<int()> ll;
+    std::map<std::string, std::vector<std::function<int()>>*> functions;
     
 };
 

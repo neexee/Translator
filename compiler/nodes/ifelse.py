@@ -11,13 +11,13 @@ class IfElse(Node):
         falseSection = self.branches[2]
         (code, startMark) = condition.generateCode(startMark)
         conditionMark = startMark
-        (truecode, startMark) = trueSection.generateCode(startMark)
+        (truecode, startMark) = trueSection.generateCode(startMark+1)
         endOfTrue= startMark
         (falsecode, startMark) = falseSection.generateCode(startMark)
         endOfFalse = startMark
         if endOfFalse == endOfTrue:
             code +=  str(conditionMark)+ ': JUMP_IF_FALSE ' + str(endOfTrue) + '\n' + truecode
         else:
-            code += str(conditionMark)+ ': JUMP_IF_FALSE ' + str(endOfTrue +1) + '\n' \
+            code += str(conditionMark)+ ': JUMP_IF_FALSE ' + str(endOfTrue +2) + '\n' \
                     + truecode + str(endOfTrue) +': JUMP ' + str(endOfFalse) + '\n' + falsecode
         return (code, startMark)

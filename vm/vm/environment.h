@@ -14,12 +14,18 @@ class environment
     environment* get_top();
     void add_local(std::string name, int value=0);
     int& get_local(std::string name);
+    int count(std::string name);
+    std::map<std::string, int>& vars(); 
+    /*
     void add_func(std::string name, std::list<std::function<void()>> code);
     std::list<std::function<void()>> get_code(std::string funcname);
+    */
+    int current_instruction;
+    std::vector<std::function<int()>> running_code;
   private:
     environment* top;
     std::map<std::string, int> lvariables;
-    std::map<std::string, std::list<std::function<void()>>> functions;
+    
 };
 
 #endif // ENVIRONMENT_H

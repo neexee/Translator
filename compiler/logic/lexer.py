@@ -9,7 +9,7 @@ class Lexer:
     def __init__(self, reader):
         self.reader = reader
         self.types = ['int', 'double']
-        self.operations = ['*', '/', '-', '+', '^', '=', '<', '>']
+        self.operations = ['*', '/', '-', '+', '^', '=', '<', '>', '==']
         self.punct = ['(', ')', '{', '}', ';', ',']
         self.parse_func = False
         self.symbolnum = 1

@@ -10,7 +10,7 @@
 #include "debug.h"
 static enum Commands
 {
-    LOAD_CONST =5,
+    LOAD_CONST,
     LOAD_FAST,
     LOAD_GLOBAL,
     STORE_FAST,
@@ -31,6 +31,7 @@ static std::map<std::string, Commands> com_num;
 executor::executor()
 {
     env = new environment(nullptr);
+   // current_code = new std::vector<std::function<void()>>();
     init();
 }
 
@@ -43,7 +44,10 @@ executor::~executor()
         env = env->get_top();
         delete oldenv;
     }
-
+    for(auto f : functions)
+    {
+        delete f.second;
+    }
 }
 void executor::init()
 {
@@ -61,19 +65,31 @@ void executor::init()
     com_num["RETURN_VALUE"] = RETURN_VALUE;
     com_num["PRINT"] = PRINT;
     com_num["CALL"] = CALL;
-    
+
     com_num["JUMP_IF_FALSE"] = JUMP_IF_FALSE;
     com_num["COMPARE_OP"] = COMPARE_OP;
     com_num["JUMP"] = JUMP;
 }
 void executor::run_func(std::string name)
 {
-    running_code = env->get_code(name);
-   // std::list<std::function<void()>>::iterator current_instruction; 
-    for (current_instruction= running_code.begin(); current_instruction!= running_code.end(); current_instruction++)
+    env->running_code = *(get_code(name));
+    env->current_instruction = 0;
+    while (env->current_instruction < env->running_code.size())
     {
-      (*current_instruction)();
+        auto instruction = env->running_code[env->current_instruction];
+        env->current_instruction = instruction();
     }
+    environment* oldenv = env;
+    env = env->get_top();
+    delete oldenv;
+}
+void executor::add_func(std::string name, std::vector<std::function<int()>>* code)
+{
+    functions[name] = code;
+}
+std::vector<std::function<int()>>* executor::get_code(std::string funcname)
+{
+    return functions[funcname];
 }
 
 void executor::exec(std::string instruction)
@@ -87,8 +103,7 @@ void executor::exec(std::string instruction)
         s>>funcname;
         s>>instruction_number;
         current_func = funcname;
-        std::cout<<"New function " << funcname <<" instructions:"<<instruction_number <<std::endl;
-        env = new environment(env);
+	current_code = new std::vector<std::function<int()>>();
     }
     else
     {
@@ -96,9 +111,12 @@ void executor::exec(std::string instruction)
         s>>value; //read mark
         if(value == instruction_number)
         {
-            env = env->get_top();
-            env->add_func(current_func, current_code);
-            current_code = std::list<std::function<void()>>();
+            ll = [this]
+            {
+			return env->running_code.size();
+            };
+            current_code->push_back(ll);;
+            add_func(current_func, current_code);
         }
         else
         {
@@ -110,10 +128,20 @@ void executor::exec(std::string instruction)
             s>>comand;
             std::string name;
             int value = 0;
-	    int a =0;
-	    int b =0;
+            int a =0;
+            int b =0;
             switch(com_num[comand])
             {
+	        case BINARY_MUL:
+                    ll =[this]
+                    {
+                        int v = stack.top();
+                        stack.pop();
+//                        std::cout<<"MUL " << v << " TOP: "<< stack.top() <<std::endl;
+                        stack.top() *= v;
+			return env->current_instruction + 1;
+                    };
+                    break;
                 case LOAD_CONST:
                     s>>value;
                     ll = [value, this]
@@ -121,18 +149,21 @@ void executor::exec(std::string instruction)
                         int v = value;
                         INFO(string("Loading const").c_str());
                         stack.push(v);  
+			return env->current_instruction +1;
                     };
                     break;
                 case LOAD_FAST:
+                    //Pushes a reference to the local varnames onto the stack.
                     s>>name;
                     ll = [name, this]
                     {
-
+                        INFO(string("Loading fast").c_str());
                         stack.push(env->get_local(name));
-
-                    };
+			return env->current_instruction +1;
+		    };
                     break;
-                case STORE_FAST:
+                case STORE_FAST:	  
+                    //Stores TOS into the local varnames
                     s>>name;  
                     ll = [name, this]
                     {
@@ -140,6 +171,7 @@ void executor::exec(std::string instruction)
                         INFO ( string(string("Storing ")+ name).c_str());
                         env->get_local(name) = v;
                         stack.pop();
+			return env->current_instruction +1;
                     };
                     break;
                 case BINARY_ADD:
@@ -147,25 +179,19 @@ void executor::exec(std::string instruction)
                     {
                         int v = stack.top();
                         stack.pop();
-                        std::cout<<"Adding " << v <<std::endl;
+                        //            std::cout<<"Adding " << v<<", top = "<< stack.top() <<std::endl;
                         stack.top() += v;
+			return env->current_instruction +1;
                     };
                     break;
                 case BINARY_SUB:
                     ll = [this]
                     {
                         int v = stack.top();
+//                        std::cout<< "Sub " << v<<std::endl;
                         stack.pop();
                         stack.top() -= v;
-                    };
-                    break;
-                case BINARY_MUL:
-                    ll =[this]
-                    {
-                        int v = stack.top();
-                        stack.pop();
-                        std::cout<<"Adding " << v <<std::endl;
-                        stack.top() *= v;
+			return env->current_instruction +1;
                     };
                     break;
                 case BINARY_DIV:
@@ -173,111 +199,98 @@ void executor::exec(std::string instruction)
                     {
                         int v = stack.top();
                         stack.pop();
-                        std::cout<<"Adding " << v <<std::endl;
+//                        std::cout<<"Adding " << v <<std::endl;
                         stack.top() /= v;
-                    };
+			return env->current_instruction +1;
+		      
+		    };
+
                     break;
                 case RETURN_VALUE:
-                   //clean stack
+                    //clean stack
                     ll = [this]
-                     {
-                         std::cout<<"Pushing/returning " << stack.top() <<std::endl;
-                     };
-                     break;
+                    {
+//                        std::cout<<"Pushing/returning somewhere " << stack.top() <<std::endl;
+                        return env->running_code.size();
+                    };
+                    break;
                 case PRINT:
                     s>>value;
                     ll =[value, this]
                     {
                         int v = value;
                         while(v)
-                            {
-                                std::cout<< "PROGRAM PRINT: "<<stack.top()<< std::endl;
-                                stack.pop();
-                                v--;
-                            }
+                        {
+                            std::cout<<stack.top()<< std::endl;
+                            stack.pop();
+                            v--;
+                        }
                         stack.push(v);
+			return env->current_instruction +1;
                     };
                     break;
                 case CALL:
                     s>>name;
                     ll = [name,this]
+                    {
+                        INFO(string("Calling").c_str());
+                        env = new environment(env);
+                        run_func(name);
+			return env->current_instruction +1;
+                    };
+                    break;
+                case COMPARE_OP:
+                    s>>name;
+                    ll = [name, this]
+                    {
+                        int a = stack.top();
+                        stack.pop();
+                        int b = stack.top();  
+                        int answer = compare(a, b, name);
+                        stack.top() = answer;
+			return env->current_instruction +1;
+                    };
+                    break;
+                case JUMP_IF_FALSE:
+                    s>>value;
+                    ll =[value, this]
+                    {
+                        int flow = stack.top();
+                        stack.pop();
+                        if(flow)
                         {
-                             run_func(name);
-                        };
-                        break;
-		case COMPARE_OP:
-		  s>>name;
-		  ll = [name, this]
-		  {
-		    int a = stack.top();
-		    stack.pop();
-		    int b = stack.top();
-		    int answer = compare(b, a, name);
-		    stack.top() = answer;
-		  };
-		  break;
-		case JUMP_IF_FALSE:
-		  s>>value;
-		  ll =[value, this]
-		  {
-		     int flow = stack.top();
-		     stack.pop();
-		     if(flow)
-		     {
-		       return;
-		    }
-		     int index = 0;
-		     for(std::list<std::function<void()>>::iterator it =running_code.begin(); it !=running_code.end(); it++ )
-		     {
-		       if(index == value -1)
-		       {
-			 current_instruction = it;
-		         return;
-			 
-		      }
-		       else
-		       {
-			 index++;
-		       }
-		     }
-		  };
-		  break;
-		case JUMP:
-		  s>> value; 
-		  ll = [value, this]
-		  {
-		     int index = 0;
-		     for(std::list<std::function<void()>>::iterator it =running_code.begin(); it !=running_code.end(); it++ )
-		     {
-		       if(index == value -1)
-		       {
-			 current_instruction = it;
-			 return;
-		       }
-		       else
-		       {
-			 index++;
-		       }
-		     }
-		  };
+                            return env->current_instruction +1;
+                        }
+                        //std::cout << "JUMP TO: " <<value<< std::endl;
+                        return value;
+                    };
+                    break;
+                case JUMP:
+                    s>> value; 
+                    ll = [value, this]
+                    {
+		      return value;
+                    };
+                    break;
             }
+            current_code->push_back(ll);
         }
-            current_code.push_back(ll);
-      }
+
+    }
 }
 int executor::compare(int a, int b, std::string op)
 {
-  if(op == "<")
-  {
-    return a<b? 1: 0;
-  }
-  if(op == ">")
-  {
-    return a>b? 1: 0;
-  }
-  if(op == "=")
-  {
-    return a==b? 1: 0;
-  }
-  return false;
+    if(op == "<")
+    {
+        return a<b? 0: 1;
+    }
+    if(op == ">")
+    {
+        return a>b? 0: 1;
+    }
+    if(op == "=")
+    {
+        return a==b? 1: 0;
+    }
+    return 0;
 }

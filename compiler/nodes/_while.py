@@ -10,7 +10,7 @@ class While(Node):
         begin = startMark
         (code, startMark) = condition.generateCode(startMark)
         conditionMark = startMark
-        (sectionCode, startMark) = codeSection.generateCode(startMark)
+        (sectionCode, startMark) = codeSection.generateCode(startMark+1)
         codeBlockEnd = startMark
         code +=  str(conditionMark)+ ': JUMP_IF_FALSE ' + str(codeBlockEnd +1) + '\n' + sectionCode+ \
                  str(codeBlockEnd)+ ': JUMP ' + str(begin) +'\n'

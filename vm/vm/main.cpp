@@ -27,6 +27,7 @@ int main(int argc, char **argv)
       getline(source, instruction);
       ex.exec(instruction);
     }
+    
     ex.run_func("main");
     source.close();
     return 0;
